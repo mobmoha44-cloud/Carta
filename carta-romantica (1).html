@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Para Ti, Mi Amor 💕</title>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --rosa-fondo:   #fff0f5;
+      --rosa-claro:   #ffd6e7;
+      --rosa-fuerte:  #e8749a;
+      --rosa-oscuro:  #c0446e;
+      --crema:        #fff8f0;
+      --dorado:       #f0c8a0;
+      --txt:          #7a3050;
+      --txt-s:        #b06080;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Cormorant Garamond', serif;
+      background: var(--rosa-fondo);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        radial-gradient(circle, #ffb3d130 1px, transparent 1px),
+        radial-gradient(circle, #ffd6e740 1.5px, transparent 1.5px);
+      background-size: 28px 28px, 56px 56px;
+      background-position: 0 0, 14px 14px;
+      pointer-events: none; z-index: 0;
+    }
+    #particles-canvas {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 1;
+    }
+    #confetti-canvas {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 100;
+    }
+
+    /* ---- ESCENA ---- */
+    .scene {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    .title-hint {
+      font-family: 'Great Vibes', cursive;
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      color: var(--rosa-oscuro);
+      margin-bottom: 2.5rem;
+      text-shadow: 0 2px 8px rgba(200,80,120,0.15);
+      opacity: 0;
+      animation: fadeInDown 1.2s ease 0.3s forwards;
+    }
+
+    /* ---- DECORACIONES DE LIRIOS ---- */
+    .lily-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lily-side {
+      position: absolute;
+      pointer-events: none;
+      top: 50%; transform: translateY(-40%);
+    }
+    .lily-side.left  { right: calc(100% + 10px); }
+    .lily-side.right { left:  calc(100% + 10px); transform: translateY(-40%) scaleX(-1); }
+    @media (max-width: 600px) {
+      .lily-side { display: none; }
+    }
+
+    /* ---- WRAPPER SOBRE + CARTA ---- */
+    /* Este contenedor posiciona la carta ENCIMA del sobre */
+    .envelope-stack {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* Espacio para que la carta suba */
+      padding-top: 320px;
+      margin-top: -320px;
+    }
+
+    /* ---- CARTA ---- */
+    .letter {
+      position: relative;
+      width: clamp(250px, 58vw, 370px);
+      background: var(--crema);
+      border-radius: 10px;
+      border: 1px solid var(--dorado);
+      padding: clamp(2rem,5vw,2.6rem) clamp(1.4rem,4vw,2.2rem) clamp(1.6rem,5vw,2.4rem);
+      box-shadow: 0 4px 28px rgba(192,68,110,0.12), inset 0 0 0 6px rgba(255,214,231,0.15);
+      /* Estado inicial: oculta justo detrás del sobre */
+      transform: translateY(320px);
+      opacity: 0;
+      transition:
+        transform 0.9s cubic-bezier(0.34, 1.36, 0.64, 1) 0.45s,
+        opacity   0.5s ease 0.45s;
+      z-index: 3;
+      overflow: visible;
+    }
+    /* Renglones decorativos */
+    .letter::before {
+      content: '';
+      position: absolute; inset: 0;
+      border-radius: 10px;
+      background-image: repeating-linear-gradient(
+        transparent, transparent 30px,
+        rgba(240,184,207,0.22) 30px, rgba(240,184,207,0.22) 31px
+      );
+      background-position: 0 52px;
+      pointer-events: none;
+    }
+    /* Estado abierta */
+    .letter.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Hello Kitty esquina carta */
+    .letter-kitty {
+      position: absolute;
+      top: -26px; right: 14px;
+      pointer-events: none;
+    }
+    /* Lirio marca de agua */
+    .letter-watermark {
+      position: absolute;
+      bottom: 12px; right: 14px;
+      opacity: 0.09; pointer-events: none;
+    }
+
+    .letter-content { position: relative; z-index: 2; }
+    .letter-greeting {
+      font-family: 'Great Vibes', cursive;
+      font-size: clamp(1.7rem, 4.5vw, 2.5rem);
+      color: var(--rosa-oscuro);
+      margin-bottom: 0.6rem; line-height: 1.2;
+    }
+    /* ✏️ CUERPO DEL MENSAJE */
+    .letter-body {
+      font-size: clamp(1rem, 2.4vw, 1.18rem);
+      line-height: 1.9;
+      color: var(--txt);
+      font-style: italic;
+    }
+    /* ✏️ FIRMA */
+    .letter-signature {
+      font-family: 'Great Vibes', cursive;
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      color: var(--rosa-fuerte);
+      margin-top: 1.2rem;
+      text-align: right;
+    }
+
+    /* ---- SOBRE ---- */
+    .envelope {
+      position: relative;
+      width: clamp(260px, 60vw, 380px);
+      height: clamp(180px, 40vw, 260px);
+      cursor: pointer;
+      filter: drop-shadow(0 12px 30px rgba(192,68,110,0.22));
+      transition: transform 0.3s ease;
+      z-index: 4;
+      flex-shrink: 0;
+    }
+    .envelope:hover:not(.opened) { transform: scale(1.03); }
+    .envelope.opened { cursor: default; }
+
+    .env-body {
+      position: absolute; inset: 0;
+      background: linear-gradient(160deg, #fff5f8 0%, #fde8f0 100%);
+      border-radius: 4px 4px 12px 12px;
+      border: 1.5px solid #f0b8cf;
+      overflow: hidden;
+    }
+    .env-body::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0; height: 55%;
+      background: linear-gradient(175deg, #fce4ef 0%, #fbd0e3 100%);
+      clip-path: polygon(0 100%, 50% 0%, 100% 100%);
+    }
+    .env-body::after {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        linear-gradient(135deg, transparent 49.5%, #f0b0ca 49.5%, #f0b0ca 50.5%, transparent 50.5%),
+        linear-gradient(225deg, transparent 49.5%, #f0b0ca 49.5%, #f0b0ca 50.5%, transparent 50.5%);
+      pointer-events: none;
+    }
+
+    /* Solapa — gira en perspectiva 3D */
+    .envelope { perspective: 600px; }
+    .env-flap {
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 55%;
+      background: linear-gradient(160deg, #fdf0f5 0%, #fad6e8 100%);
+      clip-path: polygon(0 0, 50% 100%, 100% 0);
+      transform-origin: top center;
+      transform: rotateX(0deg);
+      transition: transform 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 12;
+    }
+    .envelope.opened .env-flap { transform: rotateX(-180deg); }
+
+    .env-seal {
+      position: absolute;
+      top: 10%; left: 50%;
+      transform: translateX(-50%);
+      z-index: 13;
+      transition: opacity 0.35s ease;
+      filter: drop-shadow(0 2px 6px rgba(192,68,110,0.3));
+    }
+    .envelope.opened .env-seal { opacity: 0; pointer-events: none; }
+
+    /* ---- HINT ---- */
+    .click-hint {
+      font-style: italic;
+      font-size: clamp(0.88rem, 2.5vw, 1.05rem);
+      color: var(--txt-s);
+      margin-top: 1.2rem;
+      opacity: 0;
+      animation: pulse 2.2s ease-in-out 2s infinite, fadeInUp 1s ease 1.6s forwards;
+      letter-spacing: 0.04em;
+    }
+
+    /* ---- KEYFRAMES ---- */
+    @keyframes fadeInDown {
+      from { opacity:0; transform:translateY(-18px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity:0; transform:translateY(8px); }
+      to   { opacity:0.85; transform:translateY(0); }
+    }
+    @keyframes pulse {
+      0%,100% { opacity:.85; transform:translateY(0); }
+      50%      { opacity:.45; transform:translateY(-5px); }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+<canvas id="particles-canvas"></canvas>
+
+<div class="scene">
+  <p class="title-hint">Una carta especial para ti...</p>
+
+  <div class="lily-wrap">
+    <!-- Lirio izquierdo -->
+    <div class="lily-side left">
+      <svg width="95" height="175" viewBox="0 0 100 180" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 170 Q48 140 45 110 Q43 85 42 60" stroke="#8dbb6e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M50 150 Q55 130 60 115 Q65 100 68 80" stroke="#8dbb6e" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M46 130 Q35 118 30 105 Q42 108 46 120 Z" fill="#a0cc78" opacity="0.85"/>
+        <path d="M54 140 Q66 128 70 115 Q58 119 55 130 Z" fill="#8dbb6e" opacity="0.85"/>
+        <g transform="translate(36,52) rotate(-8)">
+          <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#ffb3d1" opacity="0.9"/>
+          <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#ffb3d1" opacity="0.9" transform="rotate(60)"/>
+          <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#f899be" opacity="0.9" transform="rotate(120)"/>
+          <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#ffb3d1" opacity="0.9" transform="rotate(180)"/>
+          <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#f899be" opacity="0.9" transform="rotate(240)"/>
+          <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#ffb3d1" opacity="0.9" transform="rotate(300)"/>
+          <circle cx="0" cy="0" r="5" fill="#ffe066"/>
+          <line x1="0" y1="-5" x2="-4" y2="-10" stroke="#e8c040" stroke-width="1"/>
+          <line x1="0" y1="-5" x2="4"  y2="-10" stroke="#e8c040" stroke-width="1"/>
+          <line x1="0" y1="-5" x2="0"  y2="-11" stroke="#e8c040" stroke-width="1"/>
+          <circle cx="-4" cy="-10" r="1.5" fill="#c8a010"/>
+          <circle cx="4"  cy="-10" r="1.5" fill="#c8a010"/>
+          <circle cx="0"  cy="-11" r="1.5" fill="#c8a010"/>
+        </g>
+        <g transform="translate(63,74) rotate(12)">
+          <ellipse cx="0" cy="-10" rx="4" ry="10" fill="#ffc8dc" opacity="0.85"/>
+          <ellipse cx="0" cy="-10" rx="4" ry="10" fill="#f8a0c0" opacity="0.85" transform="rotate(120)"/>
+          <ellipse cx="0" cy="-10" rx="4" ry="10" fill="#ffc8dc" opacity="0.85" transform="rotate(240)"/>
+          <circle cx="0" cy="0" r="4" fill="#ffe08a"/>
+        </g>
+        <g transform="translate(47,46) rotate(-5)">
+          <ellipse cx="0" cy="-9" rx="4" ry="10" fill="#ff9abe"/>
+          <ellipse cx="-3" cy="-9" rx="3" ry="10" fill="#ffc0d4" opacity="0.6"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Stack: carta arriba, sobre abajo -->
+    <div class="envelope-stack">
+
+      <!-- =============================================
+           CARTA — el texto editable está aquí abajo
+      ============================================= -->
+      <div class="letter" id="letter">
+        <!-- Hello Kitty en la esquina -->
+        <div class="letter-kitty">
+          <svg width="52" height="52" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="36" cy="40" rx="20" ry="19" fill="#fff0f6" stroke="#f8c0d8" stroke-width="1.2"/>
+            <ellipse cx="19" cy="24" rx="6" ry="6" fill="#fff0f6" stroke="#f8c0d8" stroke-width="1.2"/>
+            <ellipse cx="53" cy="24" rx="6" ry="6" fill="#fff0f6" stroke="#f8c0d8" stroke-width="1.2"/>
+            <ellipse cx="29" cy="39" rx="3" ry="3" fill="#2a2a2a"/>
+            <ellipse cx="43" cy="39" rx="3" ry="3" fill="#2a2a2a"/>
+            <circle cx="30" cy="38" r="1" fill="white"/>
+            <circle cx="44" cy="38" r="1" fill="white"/>
+            <ellipse cx="36" cy="44" rx="2.5" ry="1.8" fill="#f8a0b8"/>
+            <line x1="36" y1="44" x2="18" y2="41" stroke="#ccc" stroke-width="0.9"/>
+            <line x1="36" y1="45" x2="18" y2="45" stroke="#ccc" stroke-width="0.9"/>
+            <line x1="36" y1="44" x2="54" y2="41" stroke="#ccc" stroke-width="0.9"/>
+            <line x1="36" y1="45" x2="54" y2="45" stroke="#ccc" stroke-width="0.9"/>
+            <g transform="translate(50,22)">
+              <ellipse cx="-8" cy="-2" rx="8" ry="5.5" fill="#ff80b0" transform="rotate(-20,-8,-2)"/>
+              <ellipse cx="8"  cy="-2" rx="8" ry="5.5" fill="#ff80b0" transform="rotate(20,8,-2)"/>
+              <circle cx="0" cy="0" r="3" fill="#ff4080"/>
+            </g>
+          </svg>
+        </div>
+        <!-- Lirio marca de agua -->
+        <div class="letter-watermark">
+          <svg width="80" height="120" viewBox="0 0 100 180" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 170 Q48 140 45 110 Q43 85 42 60" stroke="#c0446e" stroke-width="2" fill="none"/>
+            <g transform="translate(36,52) rotate(-8)">
+              <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#c0446e"/>
+              <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#c0446e" transform="rotate(60)"/>
+              <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#a03058" transform="rotate(120)"/>
+              <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#c0446e" transform="rotate(180)"/>
+              <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#a03058" transform="rotate(240)"/>
+              <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#c0446e" transform="rotate(300)"/>
+              <circle cx="0" cy="0" r="4" fill="#b0986a"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="letter-content">
+          <!-- ✏️ SALUDO — cambia "Mi amor" por el nombre de tu novia -->
+          <p class="letter-greeting">Para el amor de mi vida</p>
+
+          <!-- ✏️ CUERPO — reemplaza este texto con tu mensaje personal -->
+          <p class="letter-body">
+            Feliz Cumpleaños mi vidaaaaaa🎂🎂🎂<br><br>
+           Hoy cumples 17, mi amor. Quiero escribirte esto de corazón. Hoy es tu día especial, aunque para mí todos los días son especiales por vivirlos con una mujer como tú. Quiero recordarte que eres la mejor novia del mundo; desde que hemos vuelto me has hecho muy feliz y he vuelto a ser un niño. Me siento seguro, querido, respetado... siento que tú eres mi lugar seguro y quiero que sepas que te amo mucho.<br><br>
+
+            Prometo cuidarte siempre y que te sientas lo más segura conmigo. Quiero que seas la mujer con la que pase toda mi vida, con la que tenga 3 hijos: Nora, Yara y Aziel (aunque, venga, ¡añadamos un nene más! Jsjsjsjs). No eres consciente de lo mucho que te quiero y ojalá poder pasar toda la vida juntos, pasar por todos los logros de ambos juntos, todas las penas, todos los buenos y malos momentos... aunque todos esos momentos, por malos que sean, al estar a tu lado automáticamente se convertirán en los mejores. Soy muy afortunado de tenerte, mi vida.<br><br>
+
+           No llevamos mucho, llevamos 4 meses y 1 mes jsjsjs, pero de verdad, por más problemas que haya, que sepas que nunca te voy a dejar y quiero estar siempre contigo. Esta vez la he fastidiado yo, pero no voy a perderte por esta tontería. Lo siento mucho, amor, espero que me puedas perdonar y volver a ser como antes conmigo. De verdad eres la mujer que siempre he anhelado que llegue a mi vida; amo el interés que me demuestras y la forma de querer con la que me amas. Eres una mujer increíble y de verdad espero que este solo sea el primer cumpleaños de muchos que nos quedan por vivir juntos a los dos.<br><br>
+            Te amo mucho.
+          </p>
+
+          <!-- ✏️ FIRMA — cambia "Tu amor eterno" por tu nombre -->
+          <p class="letter-signature">S</p>
+        </div>
+      </div>
+      <!-- FIN CARTA -->
+
+      <!-- SOBRE -->
+      <div class="envelope" id="envelope">
+        <div class="env-body"></div>
+        <div class="env-flap"></div>
+        <!-- Sello Hello Kitty -->
+        <div class="env-seal">
+          <svg width="68" height="68" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="36" cy="36" r="34" fill="#ffe0ed" stroke="#f0a0c0" stroke-width="2"/>
+            <ellipse cx="36" cy="40" rx="20" ry="19" fill="white" stroke="#f8c0d8" stroke-width="1.2"/>
+            <ellipse cx="19" cy="24" rx="6" ry="6" fill="white" stroke="#f8c0d8" stroke-width="1.2"/>
+            <ellipse cx="53" cy="24" rx="6" ry="6" fill="white" stroke="#f8c0d8" stroke-width="1.2"/>
+            <ellipse cx="29" cy="39" rx="3.5" ry="3.5" fill="#2a2a2a"/>
+            <ellipse cx="43" cy="39" rx="3.5" ry="3.5" fill="#2a2a2a"/>
+            <circle cx="30" cy="38" r="1" fill="white"/>
+            <circle cx="44" cy="38" r="1" fill="white"/>
+            <ellipse cx="36" cy="44" rx="2.5" ry="1.8" fill="#f8a0b8"/>
+            <line x1="36" y1="44" x2="18" y2="41" stroke="#888" stroke-width="0.9"/>
+            <line x1="36" y1="45" x2="18" y2="45" stroke="#888" stroke-width="0.9"/>
+            <line x1="36" y1="46" x2="18" y2="49" stroke="#888" stroke-width="0.9"/>
+            <line x1="36" y1="44" x2="54" y2="41" stroke="#888" stroke-width="0.9"/>
+            <line x1="36" y1="45" x2="54" y2="45" stroke="#888" stroke-width="0.9"/>
+            <line x1="36" y1="46" x2="54" y2="49" stroke="#888" stroke-width="0.9"/>
+            <g transform="translate(50,22)">
+              <ellipse cx="-8" cy="-2" rx="8" ry="5.5" fill="#ff6b9d" transform="rotate(-20,-8,-2)"/>
+              <ellipse cx="8"  cy="-2" rx="8" ry="5.5" fill="#ff6b9d" transform="rotate(20,8,-2)"/>
+              <circle cx="0" cy="0" r="3.5" fill="#ff4080"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+      <!-- FIN SOBRE -->
+
+    </div><!-- / envelope-stack -->
+
+    <!-- Lirio derecho -->
+    <div class="lily-side right">
+      <svg width="95" height="175" viewBox="0 0 100 180" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 170 Q48 140 45 110 Q43 85 42 60" stroke="#8dbb6e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M50 150 Q55 130 60 115 Q65 100 68 80" stroke="#8dbb6e" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M46 130 Q35 118 30 105 Q42 108 46 120 Z" fill="#a0cc78" opacity="0.85"/>
+        <path d="M54 140 Q66 128 70 115 Q58 119 55 130 Z" fill="#8dbb6e" opacity="0.85"/>
+        <g transform="translate(36,52) rotate(-8)">
+          <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#ffb3d1" opacity="0.9"/>
+          <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#ffb3d1" opacity="0.9" transform="rotate(60)"/>
+          <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#f899be" opacity="0.9" transform="rotate(120)"/>
+          <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#ffb3d1" opacity="0.9" transform="rotate(180)"/>
+          <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#f899be" opacity="0.9" transform="rotate(240)"/>
+          <ellipse cx="0" cy="-14" rx="5" ry="14" fill="#ffb3d1" opacity="0.9" transform="rotate(300)"/>
+          <circle cx="0" cy="0" r="5" fill="#ffe066"/>
+          <line x1="0" y1="-5" x2="-4" y2="-10" stroke="#e8c040" stroke-width="1"/>
+          <line x1="0" y1="-5" x2="4"  y2="-10" stroke="#e8c040" stroke-width="1"/>
+          <line x1="0" y1="-5" x2="0"  y2="-11" stroke="#e8c040" stroke-width="1"/>
+          <circle cx="-4" cy="-10" r="1.5" fill="#c8a010"/>
+          <circle cx="4"  cy="-10" r="1.5" fill="#c8a010"/>
+          <circle cx="0"  cy="-11" r="1.5" fill="#c8a010"/>
+        </g>
+        <g transform="translate(63,74) rotate(12)">
+          <ellipse cx="0" cy="-10" rx="4" ry="10" fill="#ffc8dc" opacity="0.85"/>
+          <ellipse cx="0" cy="-10" rx="4" ry="10" fill="#f8a0c0" opacity="0.85" transform="rotate(120)"/>
+          <ellipse cx="0" cy="-10" rx="4" ry="10" fill="#ffc8dc" opacity="0.85" transform="rotate(240)"/>
+          <circle cx="0" cy="0" r="4" fill="#ffe08a"/>
+        </g>
+        <g transform="translate(47,46) rotate(-5)">
+          <ellipse cx="0" cy="-9" rx="4" ry="10" fill="#ff9abe"/>
+          <ellipse cx="-3" cy="-9" rx="3" ry="10" fill="#ffc0d4" opacity="0.6"/>
+        </g>
+      </svg>
+    </div>
+  </div><!-- / lily-wrap -->
+
+  <p class="click-hint" id="clickHint">✨ Toca el sobre para abrir ✨</p>
+</div><!-- / scene -->
+
+<script>
+/* ---- PARTÍCULAS FLOTANTES DE FONDO ---- */
+(function(){
+  const canvas = document.getElementById('particles-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [], W, H;
+  function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', ()=>{ resize(); init(); });
+
+  function drawPetal(c,x,y,sz,a,al){
+    c.save(); c.translate(x,y); c.rotate(a); c.globalAlpha=al;
+    c.beginPath(); c.ellipse(0,-sz*.7,sz*.28,sz,0,0,Math.PI*2);
+    c.fillStyle=`hsl(${330+Math.random()*20},80%,78%)`; c.fill(); c.restore();
+  }
+  function drawBow(c,x,y,sz,a,al){
+    c.save(); c.translate(x,y); c.rotate(a); c.globalAlpha=al;
+    const col=`hsl(${338+Math.random()*15},75%,65%)`;
+    c.fillStyle=col;
+    c.beginPath(); c.ellipse(-sz*.6,0,sz*.55,sz*.35,-0.4,0,Math.PI*2); c.fill();
+    c.beginPath(); c.ellipse( sz*.6,0,sz*.55,sz*.35, 0.4,0,Math.PI*2); c.fill();
+    c.beginPath(); c.arc(0,0,sz*.22,0,Math.PI*2);
+    c.fillStyle=`hsl(345,80%,55%)`; c.fill(); c.restore();
+  }
+  function drawHeart(c,x,y,sz,a,al){
+    c.save(); c.translate(x,y); c.rotate(a); c.globalAlpha=al;
+    c.beginPath();
+    c.moveTo(0,sz*.3);
+    c.bezierCurveTo( sz*.8,-sz*.3, sz*1.2,sz*.6, 0,sz*1.2);
+    c.bezierCurveTo(-sz*1.2, sz*.6,-sz*.8,-sz*.3, 0,sz*.3);
+    c.fillStyle=`hsl(${345+Math.random()*18},85%,68%)`; c.fill(); c.restore();
+  }
+
+  function init(){
+    particles=[];
+    const n = Math.floor((W*H)/20000)+20;
+    for(let i=0;i<n;i++){
+      const t = Math.random()<.45?'petal':Math.random()<.55?'bow':'heart';
+      particles.push({
+        t, x:Math.random()*W, y:Math.random()*H,
+        sz: t==='petal'?7+Math.random()*9 : t==='bow'?6+Math.random()*8 : 4+Math.random()*6,
+        sp:0.3+Math.random()*.6, dr:(Math.random()-.5)*.3,
+        a:Math.random()*Math.PI*2, sp2:(Math.random()-.5)*.008,
+        al:0.35+Math.random()*.42
+      });
+    }
+  }
+  init();
+
+  function loop(){
+    ctx.clearRect(0,0,W,H);
+    for(const p of particles){
+      if(p.t==='petal') drawPetal(ctx,p.x,p.y,p.sz,p.a,p.al);
+      else if(p.t==='bow') drawBow(ctx,p.x,p.y,p.sz,p.a,p.al);
+      else drawHeart(ctx,p.x,p.y,p.sz,p.a,p.al);
+      p.y+=p.sp; p.x+=p.dr; p.a+=p.sp2;
+      if(p.y>H+30){p.y=-30;p.x=Math.random()*W;}
+      if(p.x<-30) p.x=W+30;
+      if(p.x>W+30) p.x=-30;
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ---- CONFETI MÁGICO ---- */
+(function(){
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  let conf=[], running=false, W, H;
+  function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }
+  resize(); window.addEventListener('resize',resize);
+
+  function spawn(cx,cy){
+    conf=[];
+    for(let i=0;i<130;i++){
+      const ang=(Math.PI*2*i/130)+Math.random()*.5;
+      const sp=4+Math.random()*9;
+      const t=Math.random()<.55?'heart':'petal';
+      conf.push({
+        t, x:cx, y:cy,
+        vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp-5,
+        g:0.17+Math.random()*.1,
+        sz: t==='heart'?5+Math.random()*7:6+Math.random()*9,
+        a:Math.random()*Math.PI*2, sp:(Math.random()-.5)*.15,
+        al:1, hue:328+Math.random()*30
+      });
+    }
+  }
+  function dHeart(x,y,sz,a,al,h){
+    ctx.save(); ctx.translate(x,y); ctx.rotate(a); ctx.globalAlpha=al;
+    ctx.beginPath();
+    ctx.moveTo(0,sz*.3);
+    ctx.bezierCurveTo( sz*.8,-sz*.3, sz*1.2,sz*.6, 0,sz*1.2);
+    ctx.bezierCurveTo(-sz*1.2, sz*.6,-sz*.8,-sz*.3, 0,sz*.3);
+    ctx.fillStyle=`hsl(${h},80%,65%)`; ctx.fill(); ctx.restore();
+  }
+  function dPetal(x,y,sz,a,al,h){
+    ctx.save(); ctx.translate(x,y); ctx.rotate(a); ctx.globalAlpha=al;
+    ctx.beginPath(); ctx.ellipse(0,-sz*.6,sz*.28,sz,0,0,Math.PI*2);
+    ctx.fillStyle=`hsl(${h},75%,75%)`; ctx.fill(); ctx.restore();
+  }
+  function loop(){
+    if(!running) return;
+    ctx.clearRect(0,0,W,H);
+    let alive=false;
+    for(const p of conf){
+      if(p.al<=0) continue;
+      alive=true;
+      p.t==='heart'?dHeart(p.x,p.y,p.sz,p.a,p.al,p.hue):dPetal(p.x,p.y,p.sz,p.a,p.al,p.hue);
+      p.x+=p.vx; p.y+=p.vy; p.vy+=p.g; p.vx*=.99; p.a+=p.sp; p.al-=.013;
+    }
+    if(alive) requestAnimationFrame(loop);
+    else{ running=false; ctx.clearRect(0,0,W,H); }
+  }
+  window.launchConfetti=function(cx,cy){ spawn(cx,cy); running=true; loop(); };
+})();
+
+/* ---- LÓGICA DEL SOBRE ---- */
+(function(){
+  const env   = document.getElementById('envelope');
+  const letter= document.getElementById('letter');
+  const hint  = document.getElementById('clickHint');
+  let opened  = false;
+
+  env.addEventListener('click', function(){
+    if(opened) return;
+    opened = true;
+
+    const r  = env.getBoundingClientRect();
+    const cx = r.left + r.width/2;
+    const cy = r.top  + r.height/2;
+
+    env.classList.add('opened');
+    // Mostrar la carta
+    setTimeout(()=>{ letter.classList.add('visible'); }, 400);
+    // Confeti
+    setTimeout(()=>{ window.launchConfetti(cx,cy); }, 500);
+    // Ocultar hint
+    hint.style.transition='opacity .4s ease';
+    hint.style.opacity='0';
+    setTimeout(()=>{ hint.style.display='none'; }, 450);
+  });
+})();
+</script>
+</body>
+</html>
